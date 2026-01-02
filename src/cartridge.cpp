@@ -9,18 +9,18 @@ Rom::Rom(std::vector<uint8_t> prg, std::vector<uint8_t> chr,
     , screen_mirroring(mirror)
 {}
 
-std::optional<Rom> Rom::create(const std::vector<uint8_t>& raw) {
+Rom Rom::create(const std::vector<uint8_t>& raw) {
     if (raw.size() < 16) {
-        return std::nullopt;  
+        throw RomParseError("File too small to be a valid ROM");
     }
     if (std::memcmp(&raw[0], NES_TAG, 4) != 0) {
-        return std::nullopt; 
+        throw RomParseError("Invalid NES file header");
     }
     
     uint8_t mapper = (raw[7] & 0b11110000) | (raw[6] >> 4);
     uint8_t ines_ver = (raw[7] >> 2) & 0b11;
     if (ines_ver != 0) {
-        return std::nullopt;  
+        throw RomParseError("Unsupported iNES version");
     }
     
     bool four_screen = (raw[6] & 0b00001000) != 0;
@@ -41,7 +41,7 @@ std::optional<Rom> Rom::create(const std::vector<uint8_t>& raw) {
     size_t chr_rom_start = prg_rom_start + prg_rom_size;
     
     if (raw.size() < chr_rom_start + chr_rom_size) {
-        return std::nullopt; 
+        throw RomParseError("ROM data is incomplete"); 
     }
     std::vector<uint8_t> prg_rom(
         raw.begin() + prg_rom_start,
