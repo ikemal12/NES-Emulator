@@ -52,8 +52,8 @@ std::optional<Rom> Rom::create(const std::vector<uint8_t>& raw) {
         raw.begin() + chr_rom_start,
         raw.begin() + chr_rom_start + chr_rom_size
     );
-        
-    return std::make_optional<Rom>(
+
+    return Rom(
         std::move(prg_rom),
         std::move(chr_rom),
         mapper,
