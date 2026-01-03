@@ -73,6 +73,20 @@ private:
     void sty(const AddressingMode& mode);  
     void lax(const AddressingMode& mode); 
     void set_register_a(uint8_t value);
+
+    void add_to_register_a(uint8_t data); 
+    void adc(const AddressingMode& mode);  
+    void sbc(const AddressingMode& mode);  
+    
+    void and_op(const AddressingMode& mode); 
+    void ora(const AddressingMode& mode);     
+    void eor(const AddressingMode& mode);   
+    
+    void compare(const AddressingMode& mode, uint8_t compare_with);
+    void cmp(const AddressingMode& mode);  
+    void cpx(const AddressingMode& mode);  
+    void cpy(const AddressingMode& mode);  
+    void bit(const AddressingMode& mode);
 };
 
 #endif // CPU_H

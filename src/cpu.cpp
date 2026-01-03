@@ -178,3 +178,100 @@ void CPU::set_register_a(uint8_t value) {
     register_a = value;
     update_zero_and_negative_flags(register_a);
 }
+
+void CPU::add_to_register_a(uint8_t data) {
+    uint16_t sum = static_cast<uint16_t>(register_a) + 
+                   static_cast<uint16_t>(data) + 
+                   (status.contains(CpuFlags::CARRY) ? 1 : 0);
+    
+    if (sum > 0xFF) {
+        status.insert(CpuFlags::CARRY);
+    } else {
+        status.remove(CpuFlags::CARRY);
+    }
+    
+    uint8_t result = static_cast<uint8_t>(sum);
+    if ((data ^ result) & (result ^ register_a) & 0x80) {
+        status.insert(CpuFlags::OVERFLOW);
+    } else {
+        status.remove(CpuFlags::OVERFLOW);
+    }
+    set_register_a(result);
+}
+
+void CPU::adc(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t value = mem_read(addr);
+    add_to_register_a(value);
+}
+
+void CPU::sbc(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    int8_t signed_data = static_cast<int8_t>(data);
+    uint8_t inverted = static_cast<uint8_t>(-signed_data - 1);
+    add_to_register_a(inverted);
+}
+
+void CPU::and_op(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    set_register_a(data & register_a);
+}
+
+void CPU::ora(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    set_register_a(data | register_a);
+}
+
+void CPU::eor(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    set_register_a(data ^ register_a);
+}
+
+void CPU::compare(const AddressingMode& mode, uint8_t compare_with) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    if (data <= compare_with) {
+        status.insert(CpuFlags::CARRY);
+    } else {
+        status.remove(CpuFlags::CARRY);
+    }
+    uint8_t result = compare_with - data;  
+    update_zero_and_negative_flags(result);
+}
+
+void CPU::cmp(const AddressingMode& mode) {
+    compare(mode, register_a);
+}
+
+void CPU::cpx(const AddressingMode& mode) {
+    compare(mode, register_x);
+}
+
+void CPU::cpy(const AddressingMode& mode) {
+    compare(mode, register_y);
+}
+
+void CPU::bit(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    uint8_t result = register_a & data;
+    if (result == 0) {
+        status.insert(CpuFlags::ZERO);
+    } else {
+        status.remove(CpuFlags::ZERO);
+    }
+    if (data & 0b10000000) {
+        status.insert(CpuFlags::NEGATIVE);
+    } else {
+        status.remove(CpuFlags::NEGATIVE);
+    }
+    if (data & 0b01000000) {
+        status.insert(CpuFlags::OVERFLOW);
+    } else {
+        status.remove(CpuFlags::OVERFLOW);
+    }
+}
