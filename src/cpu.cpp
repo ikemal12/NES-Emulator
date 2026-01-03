@@ -71,3 +71,61 @@ void CPU::update_zero_and_negative_flags(uint8_t result) {
         status.remove(CpuFlags::NEGATIVE);
     }
 }
+
+uint16_t CPU::get_operand_address(const AddressingMode& mode) {
+    switch (mode) {
+        case AddressingMode::Immediate:
+            return program_counter;
+            
+        case AddressingMode::ZeroPage:
+            return mem_read(program_counter);
+            
+        case AddressingMode::Absolute:
+            return mem_read_u16(program_counter);
+            
+        case AddressingMode::ZeroPage_X: {
+            uint8_t pos = mem_read(program_counter);
+            uint8_t addr = pos + register_x; 
+            return addr;
+        }
+        
+        case AddressingMode::ZeroPage_Y: {
+            uint8_t pos = mem_read(program_counter);
+            uint8_t addr = pos + register_y; 
+            return addr;
+        }
+        
+        case AddressingMode::Absolute_X: {
+            uint16_t base = mem_read_u16(program_counter);
+            uint16_t addr = base + register_x; 
+            return addr;
+        }
+        
+        case AddressingMode::Absolute_Y: {
+            uint16_t base = mem_read_u16(program_counter);
+            uint16_t addr = base + register_y;  
+            return addr;
+        }
+        
+        case AddressingMode::Indirect_X: {
+            uint8_t base = mem_read(program_counter);
+            uint8_t ptr = base + register_x;  
+            uint8_t lo = mem_read(ptr);
+            uint8_t hi = mem_read(static_cast<uint8_t>(ptr + 1)); 
+            return (static_cast<uint16_t>(hi) << 8) | lo;
+        }
+        
+        case AddressingMode::Indirect_Y: {
+            uint8_t base = mem_read(program_counter);
+            uint8_t lo = mem_read(base);
+            uint8_t hi = mem_read(static_cast<uint8_t>(base + 1));  
+            uint16_t deref_base = (static_cast<uint16_t>(hi) << 8) | lo;
+            uint16_t addr = deref_base + register_y;  
+            return addr;
+        }
+        
+        case AddressingMode::NoneAddressing:
+            throw std::runtime_error("get_operand_address called with NoneAddressing mode");
+    }
+    throw std::runtime_error("Unknown addressing mode");
+}

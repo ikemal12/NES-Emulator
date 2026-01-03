@@ -63,6 +63,7 @@ private:
     void set_carry_flag();
     void clear_carry_flag();
     void update_zero_and_negative_flags(uint8_t result);
+    uint16_t get_operand_address(const AddressingMode& mode);
 };
 
 #endif // CPU_H
