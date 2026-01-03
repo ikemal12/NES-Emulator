@@ -64,6 +64,15 @@ private:
     void clear_carry_flag();
     void update_zero_and_negative_flags(uint8_t result);
     uint16_t get_operand_address(const AddressingMode& mode);
+
+    void lda(const AddressingMode& mode);  
+    void ldx(const AddressingMode& mode); 
+    void ldy(const AddressingMode& mode);  
+    void sta(const AddressingMode& mode);  
+    void stx(const AddressingMode& mode);  
+    void sty(const AddressingMode& mode);  
+    void lax(const AddressingMode& mode); 
+    void set_register_a(uint8_t value);
 };
 
 #endif // CPU_H

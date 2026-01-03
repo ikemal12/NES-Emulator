@@ -129,3 +129,52 @@ uint16_t CPU::get_operand_address(const AddressingMode& mode) {
     }
     throw std::runtime_error("Unknown addressing mode");
 }
+
+void CPU::lda(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t value = mem_read(addr);
+    register_a = value;
+    update_zero_and_negative_flags(register_a);
+}
+
+void CPU::ldx(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t value = mem_read(addr);
+    register_x = value;
+    update_zero_and_negative_flags(register_x);
+}
+
+void CPU::ldy(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t value = mem_read(addr);
+    register_y = value;
+    update_zero_and_negative_flags(register_y);
+}
+
+void CPU::sta(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    mem_write(addr, register_a);
+}
+
+void CPU::stx(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    mem_write(addr, register_x);
+}
+
+void CPU::sty(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    mem_write(addr, register_y);
+}
+
+void CPU::lax(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t value = mem_read(addr);
+    register_a = value;
+    register_x = value;
+    update_zero_and_negative_flags(register_a);
+}
+
+void CPU::set_register_a(uint8_t value) {
+    register_a = value;
+    update_zero_and_negative_flags(register_a);
+}
