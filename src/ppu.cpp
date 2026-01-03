@@ -3,10 +3,10 @@
 
 NesPPU::NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring)
     : chr_rom(std::move(chr_rom))
-    , mirroring(mirroring)
     , vram{}
     , oam_data{}
     , palette_table{}
+    , mirroring(mirroring)
     , addr()
     , ctrl()
     , internal_data_buf(0)
