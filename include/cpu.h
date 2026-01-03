@@ -54,6 +54,15 @@ public:
     uint8_t mem_read(uint16_t addr) const override;
     void mem_write(uint16_t addr, uint8_t data) override;
     void reset();
+private:
+    void stack_push(uint8_t data);
+    uint8_t stack_pop();
+    void stack_push_u16(uint16_t data);
+    uint16_t stack_pop_u16();
+    
+    void set_carry_flag();
+    void clear_carry_flag();
+    void update_zero_and_negative_flags(uint8_t result);
 };
 
 #endif // CPU_H
