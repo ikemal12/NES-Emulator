@@ -6,10 +6,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
 
-file(GLOB_RECURSE SOURCES 
+file(GLOB_RECURSE LIB_SOURCES 
     "src/*.cpp"
     "src/ppu/*.cpp"
     "src/ppu/registers/*.cpp"
 )
 
-add_executable(nes_emu ${SOURCES})
+list(FILTER LIB_SOURCES EXCLUDE REGEX ".*main\\.cpp$")
+add_library(nes-emu-core STATIC ${LIB_SOURCES})
+
+add_executable(nestest-runner
+    test/nestest_runner.cpp
+    test/trace.cpp
+)
+target_link_libraries(nestest-runner nes-emu-core)

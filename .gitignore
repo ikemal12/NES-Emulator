@@ -1,5 +1,4 @@
-snake.nes
-snake
-mynes.log
 build/
 archive/
+test/*.log
+test/output/

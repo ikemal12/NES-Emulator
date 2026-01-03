@@ -25,7 +25,7 @@ int main() {
     
     try {
         std::cout << "Loading nestest.nes...\n";
-        std::vector<uint8_t> rom_data = read_file("nestest.nes");
+        std::vector<uint8_t> rom_data = read_file("test/roms/nestest.nes");
         Rom rom = Rom::create(rom_data);
         std::cout << "ROM loaded successfully!\n";
         std::cout << "  PRG-ROM: " << rom.prg_rom.size() << " bytes\n";
