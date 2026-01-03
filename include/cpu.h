@@ -87,6 +87,22 @@ private:
     void cpx(const AddressingMode& mode);  
     void cpy(const AddressingMode& mode);  
     void bit(const AddressingMode& mode);
+
+    void asl_accumulator(); 
+    void asl(const AddressingMode& mode);  
+    void lsr_accumulator();  
+    void lsr(const AddressingMode& mode);  
+    void rol_accumulator();  
+    void rol(const AddressingMode& mode); 
+    void ror_accumulator();  
+    void ror(const AddressingMode& mode);  
+    
+    void inc(const AddressingMode& mode); 
+    void dec(const AddressingMode& mode);  
+    void inx();  
+    void iny();  
+    void dex();  
+    void dey(); 
 };
 
 #endif // CPU_H

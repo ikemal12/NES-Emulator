@@ -275,3 +275,151 @@ void CPU::bit(const AddressingMode& mode) {
         status.remove(CpuFlags::OVERFLOW);
     }
 }
+
+void CPU::asl_accumulator() {
+    uint8_t data = register_a;
+    if ((data >> 7) == 1) {
+        set_carry_flag();
+    } else {
+        clear_carry_flag();
+    }
+    data = data << 1;
+    set_register_a(data);
+}
+
+void CPU::asl(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    if ((data >> 7) == 1) {
+        set_carry_flag();
+    } else {
+        clear_carry_flag();
+    }
+    data = data << 1;
+    mem_write(addr, data);
+    update_zero_and_negative_flags(data);
+}
+
+void CPU::lsr_accumulator() {
+    uint8_t data = register_a;
+    if ((data & 1) == 1) {
+        set_carry_flag();
+    } else {
+        clear_carry_flag();
+    }
+    data = data >> 1;
+    set_register_a(data);
+}
+
+void CPU::lsr(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    if ((data & 1) == 1) {
+        set_carry_flag();
+    } else {
+        clear_carry_flag();
+    }
+    data = data >> 1;
+    mem_write(addr, data);
+    update_zero_and_negative_flags(data);
+}
+
+void CPU::rol_accumulator() {
+    uint8_t data = register_a;
+    bool old_carry = status.contains(CpuFlags::CARRY);
+    if ((data >> 7) == 1) {
+        set_carry_flag();
+    } else {
+        clear_carry_flag();
+    }
+    data = data << 1;
+    if (old_carry) {
+        data = data | 1;
+    }
+    set_register_a(data);
+}
+
+void CPU::rol(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    bool old_carry = status.contains(CpuFlags::CARRY);
+    if ((data >> 7) == 1) {
+        set_carry_flag();
+    } else {
+        clear_carry_flag();
+    }
+    data = data << 1;
+    if (old_carry) {
+        data = data | 1;
+    }
+    mem_write(addr, data);
+    update_zero_and_negative_flags(data);
+}
+
+void CPU::ror_accumulator() {
+    uint8_t data = register_a;
+    bool old_carry = status.contains(CpuFlags::CARRY);
+    if ((data & 1) == 1) {
+        set_carry_flag();
+    } else {
+        clear_carry_flag();
+    }
+    data = data >> 1;
+    if (old_carry) {
+        data = data | 0b10000000;
+    }
+    set_register_a(data);
+}
+
+void CPU::ror(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    bool old_carry = status.contains(CpuFlags::CARRY);
+    if ((data & 1) == 1) {
+        set_carry_flag();
+    } else {
+        clear_carry_flag();
+    }
+    data = data >> 1;
+    if (old_carry) {
+        data = data | 0b10000000;
+    }
+    mem_write(addr, data);
+    update_zero_and_negative_flags(data);
+}
+
+void CPU::inc(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    data = data + 1; 
+    mem_write(addr, data);
+    update_zero_and_negative_flags(data);
+}
+
+void CPU::dec(const AddressingMode& mode) {
+    uint16_t addr = get_operand_address(mode);
+    uint8_t data = mem_read(addr);
+    data = data - 1;  
+    mem_write(addr, data);
+    update_zero_and_negative_flags(data);
+}
+
+void CPU::inx() {
+    register_x = register_x + 1; 
+    update_zero_and_negative_flags(register_x);
+}
+
+void CPU::iny() {
+    register_y = register_y + 1;  
+    update_zero_and_negative_flags(register_y);
+}
+
+void CPU::dex() {
+    register_x = register_x - 1; 
+    update_zero_and_negative_flags(register_x);
+}
+
+void CPU::dey() {
+    register_y = register_y - 1;  
+    update_zero_and_negative_flags(register_y);
+}
