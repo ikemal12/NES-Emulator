@@ -54,6 +54,10 @@ public:
     uint8_t mem_read(uint16_t addr) const override;
     void mem_write(uint16_t addr, uint8_t data) override;
     void reset();
+
+    void run();
+    template<typename F>
+    void run_with_callback(F callback);
 private:
     void stack_push(uint8_t data);
     uint8_t stack_pop();
