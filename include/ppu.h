@@ -1,6 +1,8 @@
 #ifndef PPU_H
 #define PPU_H
 #include "cartridge.h"
+#include "ppu/registers/addr.h"
+#include "ppu/registers/control.h"
 #include <cstdint>
 #include <vector>
 #include <array>
@@ -12,7 +14,13 @@ public:
     std::array<uint8_t, 256> oam_data;
     std::array<uint8_t, 32> palette_table;
     Mirroring mirroring;
+
+    AddrRegister addr;
+    ControlRegister ctrl;
+    uint8_t internal_data_buf;
     NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring);
+    uint16_t mirror_vram_addr(uint16_t addr) const;
+    void increment_vram_addr();
     
     uint8_t read_status();
     uint8_t read_oam_data();
