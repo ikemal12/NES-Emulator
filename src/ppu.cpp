@@ -46,13 +46,34 @@ uint8_t NesPPU::read_oam_data() {
 }
 
 uint8_t NesPPU::read_data() {
-    return 0;
+    uint16_t address = addr.get();
+    increment_vram_addr();
+
+    if (address >= 0 && address <= 0x1FFF) {
+        uint8_t result = internal_data_buf;
+        internal_data_buf = chr_rom[address];
+        return result;
+    } else if (address >= 0x2000 && address <= 0x2FFF) {
+        uint8_t result = internal_data_buf;
+        internal_data_buf = vram[mirror_vram_addr(address)];
+        return result;
+    } else if (address >= 0x3000 && address <= 0x3EFF) {
+        throw std::runtime_error("addr space 0x3000..0x3EFF is not expected to be used, requested = " + std::to_string(address));
+    } else if (address >= 0x3F00 && address <= 0x3FFF) {
+        return palette_table[(address - 0x3F00) % 32];
+    } else {
+        throw std::runtime_error("unexpected access to mirrored space " + std::to_string(address));
+    }
 }
 
-void NesPPU::write_to_ctrl(uint8_t value) {}
+void NesPPU::write_to_ctrl(uint8_t value) {
+    ctrl.update(value);
+}
 void NesPPU::write_to_mask(uint8_t value) {}
 void NesPPU::write_to_oam_addr(uint8_t value) {}
 void NesPPU::write_to_oam_data(uint8_t value) {}
 void NesPPU::write_to_scroll(uint8_t value) {}
-void NesPPU::write_to_ppu_addr(uint8_t value) {}
+void NesPPU::write_to_ppu_addr(uint8_t value) {
+    addr.update(value);
+}
 void NesPPU::write_to_data(uint8_t value) {}
