@@ -423,3 +423,125 @@ void CPU::dey() {
     register_y = register_y - 1;  
     update_zero_and_negative_flags(register_y);
 }
+
+void CPU::branch(bool condition) {
+    if (condition) {
+        int8_t jump = static_cast<int8_t>(mem_read(program_counter));
+        uint16_t jump_addr = program_counter + 1 + static_cast<uint16_t>(jump);
+        program_counter = jump_addr;
+    }
+}
+
+void CPU::jmp_absolute() {
+    uint16_t addr = mem_read_u16(program_counter);
+    program_counter = addr;
+}
+
+void CPU::jmp_indirect() {
+    uint16_t addr = mem_read_u16(program_counter);
+    uint16_t indirect_ref;
+    if ((addr & 0x00FF) == 0x00FF) {
+        uint8_t lo = mem_read(addr);
+        uint8_t hi = mem_read(addr & 0xFF00); 
+        indirect_ref = (static_cast<uint16_t>(hi) << 8) | lo;
+    } else {
+        indirect_ref = mem_read_u16(addr);
+    }
+    program_counter = indirect_ref;
+}
+
+void CPU::jsr() {
+    stack_push_u16(program_counter + 2 - 1);
+    uint16_t target_addr = mem_read_u16(program_counter);
+    program_counter = target_addr;
+}
+
+void CPU::rts() {
+    program_counter = stack_pop_u16() + 1;
+}
+
+void CPU::rti() {
+    status = CpuFlags::from_bits_truncate(stack_pop());
+    status.remove(CpuFlags::BREAK);
+    status.remove(CpuFlags::BREAK2);
+    program_counter = stack_pop_u16();
+}
+
+void CPU::pha() {
+    stack_push(register_a);
+}
+
+void CPU::pla() {
+    uint8_t data = stack_pop();
+    set_register_a(data);
+}
+
+void CPU::php() {
+    CpuFlags flags = status;
+    flags.insert(CpuFlags::BREAK);
+    flags.insert(CpuFlags::BREAK2);
+    stack_push(flags.bits);
+}
+
+void CPU::plp() {
+    status = CpuFlags::from_bits_truncate(stack_pop());
+    status.remove(CpuFlags::BREAK);
+    status.remove(CpuFlags::BREAK2);
+}
+
+void CPU::tax() {
+    register_x = register_a;
+    update_zero_and_negative_flags(register_x);
+}
+
+void CPU::tay() {
+    register_y = register_a;
+    update_zero_and_negative_flags(register_y);
+}
+
+void CPU::txa() {
+    register_a = register_x;
+    update_zero_and_negative_flags(register_a);
+}
+
+void CPU::tya() {
+    register_a = register_y;
+    update_zero_and_negative_flags(register_a);
+}
+
+void CPU::tsx() {
+    register_x = stack_pointer;
+    update_zero_and_negative_flags(register_x);
+}
+
+void CPU::txs() {
+    stack_pointer = register_x;
+}
+
+void CPU::clc() {
+    status.remove(CpuFlags::CARRY);
+}
+
+void CPU::sec() {
+    status.insert(CpuFlags::CARRY);
+}
+
+void CPU::cli() {
+    status.remove(CpuFlags::INTERRUPT_DISABLE);
+}
+
+void CPU::sei() {
+    status.insert(CpuFlags::INTERRUPT_DISABLE);
+}
+
+void CPU::cld() {
+    status.remove(CpuFlags::DECIMAL_MODE);
+}
+
+void CPU::sed() {
+    status.insert(CpuFlags::DECIMAL_MODE);
+}
+
+void CPU::clv() {
+    status.remove(CpuFlags::OVERFLOW);
+}

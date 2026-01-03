@@ -103,6 +103,33 @@ private:
     void iny();  
     void dex();  
     void dey(); 
+
+    void branch(bool condition);
+    void jmp_absolute();
+    void jmp_indirect();
+    void jsr();  
+    void rts();  
+    void rti();  
+    
+    void pha();  
+    void pla();  
+    void php();  
+    void plp();  
+    
+    void tax();  
+    void tay(); 
+    void txa();  
+    void tya(); 
+    void tsx();  
+    void txs();  
+    
+    void clc();  
+    void sec();  
+    void cli();  
+    void sei(); 
+    void cld();  
+    void sed();  
+    void clv();  
 };
 
 #endif // CPU_H
