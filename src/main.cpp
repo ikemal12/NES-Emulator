@@ -1,6 +1,7 @@
 #include "cartridge.h"
 #include "bus.h"
 #include "cpu.h"
+#include "trace.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -44,17 +45,12 @@ int main() {
         std::cout << "CPU reset complete!\n";
         std::cout << "  Program Counter: 0x" << std::hex << cpu.program_counter << std::dec << "\n\n";
         
-        std::cout << "Running 10 CPU instructions...\n";
+        std::cout << "Running CPU with trace output:\n";
+        std::cout << "=================================\n";
         int instruction_count = 0;
         cpu.run_with_callback([&instruction_count](CPU& cpu) {
+            std::cout << trace(cpu) << "\n";
             instruction_count++;
-            std::cout << "  Instruction " << instruction_count 
-                      << " - PC: 0x" << std::hex << cpu.program_counter 
-                      << " A: 0x" << static_cast<int>(cpu.register_a)
-                      << " X: 0x" << static_cast<int>(cpu.register_x)
-                      << " Y: 0x" << static_cast<int>(cpu.register_y)
-                      << std::dec << "\n";
-            
             if (instruction_count >= 10) {
                 std::exit(0); 
             }
