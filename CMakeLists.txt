@@ -4,6 +4,9 @@ project(nes_emu)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+
 include_directories(include)
 
 file(GLOB_RECURSE LIB_SOURCES 
@@ -20,3 +23,8 @@ add_executable(nestest-runner
     test/trace.cpp
 )
 target_link_libraries(nestest-runner nes-emu-core)
+
+add_executable(nes-emu
+    src/main.cpp
+)
+target_link_libraries(nes-emu nes-emu-core ${SDL2_LIBRARIES})

@@ -17,7 +17,3 @@ void Frame::set_pixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b) {
 void Frame::set_pixel(size_t x, size_t y, const std::array<uint8_t, 3>& rgb) {
     set_pixel(x, y, rgb[0], rgb[1], rgb[2]);
 }
-
-const std::array<uint8_t, Frame::WIDTH * Frame::HEIGHT * 3>& Frame::get_data() const {
-    return data;
-}
