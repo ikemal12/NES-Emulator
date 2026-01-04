@@ -10,6 +10,7 @@ NesPPU::NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring)
     , addr()
     , ctrl()
     , status()
+    , mask()
     , internal_data_buf(0)
 {}
 
@@ -72,7 +73,11 @@ uint8_t NesPPU::read_data() {
 void NesPPU::write_to_ctrl(uint8_t value) {
     ctrl.update(value);
 }
-void NesPPU::write_to_mask(uint8_t value) {}
+
+void NesPPU::write_to_mask(uint8_t value) {
+    mask.update(value);
+}
+
 void NesPPU::write_to_oam_addr(uint8_t value) {}
 void NesPPU::write_to_oam_data(uint8_t value) {}
 void NesPPU::write_to_scroll(uint8_t value) {}

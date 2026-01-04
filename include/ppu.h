@@ -4,6 +4,7 @@
 #include "ppu/registers/addr.h"
 #include "ppu/registers/control.h"
 #include "ppu/registers/status.h"
+#include "ppu/registers/mask.h"
 #include <cstdint>
 #include <vector>
 #include <array>
@@ -19,6 +20,7 @@ public:
     AddrRegister addr;
     ControlRegister ctrl;
     StatusRegister status;
+    MaskRegister mask;
     uint8_t internal_data_buf;
     NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring);
     uint16_t mirror_vram_addr(uint16_t addr) const;
