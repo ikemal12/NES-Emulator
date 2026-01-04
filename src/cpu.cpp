@@ -85,6 +85,7 @@ void CPU::update_zero_and_negative_flags(uint8_t result) {
     }
 }
 
+// TODO: Track page boundary crossings for Absolute_X, Absolute_Y, and Indirect_Y
 uint16_t CPU::get_operand_address(const AddressingMode& mode) {
     switch (mode) {
         case AddressingMode::Immediate:
@@ -439,8 +440,13 @@ void CPU::dey() {
 
 void CPU::branch(bool condition) {
     if (condition) {
+        uint16_t base_addr = program_counter + 1;
         int8_t jump = static_cast<int8_t>(mem_read(program_counter));
-        uint16_t jump_addr = program_counter + 1 + static_cast<uint16_t>(jump);
+        uint16_t jump_addr = base_addr + static_cast<uint16_t>(jump);
+        bus.ppu->tick(3);  
+        if ((base_addr & 0xFF00) != (jump_addr & 0xFF00)) {
+            bus.ppu->tick(3);
+        }
         program_counter = jump_addr;
     }
 }
