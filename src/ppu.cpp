@@ -11,6 +11,7 @@ NesPPU::NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring)
     , ctrl()
     , status()
     , mask()
+    , scroll()
     , internal_data_buf(0)
     , oam_addr(0)
 {}
@@ -43,6 +44,7 @@ void NesPPU::increment_vram_addr() {
 uint8_t NesPPU::read_status() {
     uint8_t data = status.snapshot();
     addr.reset_latch();
+    scroll.reset_latch();
     return data;
 }
 
@@ -88,7 +90,10 @@ void NesPPU::write_to_oam_data(uint8_t value) {
     oam_addr = oam_addr + 1;
 }
 
-void NesPPU::write_to_scroll(uint8_t value) {}
+void NesPPU::write_to_scroll(uint8_t value) {
+    scroll.write(value);
+}
+
 void NesPPU::write_to_ppu_addr(uint8_t value) {
     addr.update(value);
 }

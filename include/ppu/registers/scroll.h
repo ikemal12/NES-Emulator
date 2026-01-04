@@ -4,7 +4,6 @@
 
 class ScrollRegister {
 private:
-    uint8_t bits;
     uint8_t scroll_x;
     uint8_t scroll_y;
     bool latch;

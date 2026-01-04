@@ -5,6 +5,7 @@
 #include "ppu/registers/control.h"
 #include "ppu/registers/status.h"
 #include "ppu/registers/mask.h"
+#include "ppu/registers/scroll.h"
 #include <cstdint>
 #include <vector>
 #include <array>
@@ -21,6 +22,7 @@ public:
     ControlRegister ctrl;
     StatusRegister status;
     MaskRegister mask;
+    ScrollRegister scroll;
     uint8_t internal_data_buf;
     uint8_t oam_addr;
     NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring);
