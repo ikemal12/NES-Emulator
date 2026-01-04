@@ -341,8 +341,14 @@ public:
             if (program_counter_state == program_counter) {
                 program_counter += (opcode->len - 1);
             }
+            uint8_t cpu_cycles = opcode->cycles;
+            bool nmi_triggered = bus.ppu->tick(cpu_cycles * 3); 
+            if (nmi_triggered) {
+                interrupt_nmi();
+            }
         }
     }
+    
 private:
     void stack_push(uint8_t data);
     uint8_t stack_pop();
