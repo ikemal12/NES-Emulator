@@ -9,6 +9,7 @@ NesPPU::NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring)
     , mirroring(mirroring)
     , addr()
     , ctrl()
+    , status()
     , internal_data_buf(0)
 {}
 
@@ -38,7 +39,9 @@ void NesPPU::increment_vram_addr() {
 }
 
 uint8_t NesPPU::read_status() {
-    return 0;
+    uint8_t data = status.snapshot();
+    addr.reset_latch();
+    return data;
 }
 
 uint8_t NesPPU::read_oam_data() {

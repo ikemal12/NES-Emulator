@@ -15,13 +15,12 @@ public:
     static const uint8_t VBLANK_STARTED   = 0b10000000;
 
     StatusRegister();
-    bool is_in_blank() const;
     void set_vblank_status(bool status);
-    void set_sprite_overflow(bool status);
     void set_sprite_zero_hit(bool status);
+    void set_sprite_overflow(bool status);
     void reset_vblank_status();
-    uint8_t snapshot() const;
-
+    bool is_in_vblank() const;
+    uint8_t snapshot();
 };
 
 #endif // STATUS_REGISTER_H
