@@ -22,6 +22,7 @@ public:
     StatusRegister status;
     MaskRegister mask;
     uint8_t internal_data_buf;
+    uint8_t oam_addr;
     NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring);
     uint16_t mirror_vram_addr(uint16_t addr) const;
     void increment_vram_addr();
