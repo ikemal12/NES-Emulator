@@ -97,4 +97,20 @@ void NesPPU::write_to_scroll(uint8_t value) {
 void NesPPU::write_to_ppu_addr(uint8_t value) {
     addr.update(value);
 }
-void NesPPU::write_to_data(uint8_t value) {}
+
+void NesPPU::write_to_data(uint8_t value) {
+    uint16_t address = addr.get();
+    if (address >= 0 && address <= 0x1FFF) {
+        // For now, silently ignore writes (CHR ROM can't be written)
+        // Later: check if cartridge has CHR RAM and allow writes
+    } else if (address >= 0x2000 && address <= 0x2FFF) {
+        vram[mirror_vram_addr(address)] = value;
+    } else if (address >= 0x3000 && address <= 0x3EFF) {
+        throw std::runtime_error("addr space 0x3000..0x3EFF is not expected to be used, requested = " + std::to_string(address));
+    } else if (address >= 0x3F00 && address <= 0x3FFF) {
+        palette_table[(address - 0x3F00) % 32] = value;
+    } else {
+        throw std::runtime_error("unexpected access to mirrored space " + std::to_string(address));
+    }
+    increment_vram_addr();
+}
