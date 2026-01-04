@@ -55,6 +55,7 @@ public:
     uint8_t mem_read(uint16_t addr) const override;
     void mem_write(uint16_t addr, uint8_t data) override;
     void reset();
+    void interrupt_nmi();
 
     void run();
     template<typename F>

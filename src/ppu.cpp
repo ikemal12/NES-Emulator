@@ -14,6 +14,9 @@ NesPPU::NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring)
     , scroll()
     , internal_data_buf(0)
     , oam_addr(0)
+    , cycles(0)
+    , scanline(0)
+    , nmi_interrupt(false)
 {}
 
 uint16_t NesPPU::mirror_vram_addr(uint16_t addr) const {
@@ -113,4 +116,32 @@ void NesPPU::write_to_data(uint8_t value) {
         throw std::runtime_error("unexpected access to mirrored space " + std::to_string(address));
     }
     increment_vram_addr();
+}
+
+bool NesPPU::tick(uint8_t cycles) {
+    this->cycles += cycles;
+    if (this->cycles >= 341) {
+        this->cycles -= 341;
+        scanline += 1;
+
+        if (scanline == 241) {
+            status.set_vblank_status(true);
+            if (ctrl.contains(ControlRegister::GENERATE_NMI)) {
+                nmi_interrupt = true;
+            }
+        }
+        if (scanline >= 262) {
+            scanline = 0;
+            status.set_vblank_status(false);
+            status.set_sprite_zero_hit(false);
+            nmi_interrupt = false;
+        }
+    }
+    return nmi_interrupt;
+}
+
+bool NesPPU::poll_nmi_interrupt() {
+    bool result = nmi_interrupt;
+    nmi_interrupt = false;
+    return result;
 }

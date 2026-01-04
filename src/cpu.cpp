@@ -29,6 +29,17 @@ void CPU::reset() {
     program_counter = mem_read_u16(0xFFFC);
 }
 
+void CPU::interrupt_nmi() {
+    stack_push_u16(program_counter);
+    uint8_t flags = status.bits;
+    flags &= ~CpuFlags::BREAK;  
+    flags |= CpuFlags::BREAK2; 
+    stack_push(flags);
+    status.insert(CpuFlags::INTERRUPT_DISABLE);
+    uint16_t nmi_vector = mem_read_u16(0xFFFA);
+    program_counter = nmi_vector;
+}
+
 void CPU::stack_push(uint8_t data) {
     mem_write(STACK + stack_pointer, data);
     stack_pointer = stack_pointer - 1;  
