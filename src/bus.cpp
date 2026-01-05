@@ -2,11 +2,12 @@
 #include <iostream>
 #include <stdexcept>
 
-Bus::Bus(Rom rom, std::function<void(const NesPPU&)> callback)
+Bus::Bus(Rom rom, std::function<void(const NesPPU&, Joypad&)> callback)
     : cpu_vram{}
     , prg_rom(std::move(rom.prg_rom))
     , ppu(std::make_unique<NesPPU>(std::move(rom.chr_rom), rom.screen_mirroring))
     , gameloop_callback(std::move(callback))
+    , joypad()
 {}
 
 uint8_t Bus::read_prg_rom(uint16_t addr) const {
@@ -42,6 +43,9 @@ uint8_t Bus::mem_read(uint16_t addr) const {
         
     } else if (addr >= 0x8000 && addr <= 0xFFFF) {
         return read_prg_rom(addr);
+    
+    } else if (addr == 0x4016) {
+        return joypad.read();
         
     } else {
         return 0;
@@ -83,7 +87,11 @@ void Bus::mem_write(uint16_t addr, uint8_t data) {
         
     } else if (addr >= 0x8000 && addr <= 0xFFFF) {
         throw std::runtime_error("Attempt to write to Cartridge ROM space");
-    } 
+
+    } else if (addr == 0x4016) {
+        joypad.write(data);
+    }
+
 }
 
 void Bus::tick(uint8_t cpu_cycles) {
@@ -91,6 +99,6 @@ void Bus::tick(uint8_t cpu_cycles) {
     ppu->tick(cpu_cycles * 3);
     bool nmi_after = ppu->nmi_interrupt;
     if (!nmi_before && nmi_after) {
-        gameloop_callback(*ppu);
+        gameloop_callback(*ppu, joypad);
     }
 }

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <map>
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -47,7 +48,7 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
-    std::ifstream file("test/roms/nestest.nes", std::ios::binary);
+    std::ifstream file("test/roms/snake.nes", std::ios::binary);
     if (!file) {
         std::cerr << "Failed to open nestest.nes" << std::endl;
         SDL_DestroyTexture(texture);
@@ -64,8 +65,18 @@ int main(int argc, char* argv[]) {
     Renderer nes_renderer;
     SDL_Event event;
     int frame_count = 0;
+    std::map<SDL_Keycode, JoypadButton> key_map = {
+        {SDLK_DOWN, JoypadButton::DOWN},
+        {SDLK_UP, JoypadButton::UP},
+        {SDLK_LEFT, JoypadButton::LEFT},
+        {SDLK_RIGHT, JoypadButton::RIGHT},
+        {SDLK_SPACE, JoypadButton::SELECT},
+        {SDLK_RETURN, JoypadButton::START},
+        {SDLK_a, JoypadButton::BUTTON_A},
+        {SDLK_s, JoypadButton::BUTTON_B}
+    };
 
-    Bus bus(std::move(cartridge), [&](const NesPPU& ppu) {
+    Bus bus(std::move(cartridge), [&](const NesPPU& ppu, Joypad& joypad) {
         frame_count++;
         if (frame_count % 60 == 0) {
             std::cout << "Rendered " << frame_count << " frames..." << std::endl;
@@ -81,8 +92,20 @@ int main(int argc, char* argv[]) {
             if (event.type == SDL_QUIT) {
                 std::exit(0);
             }
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
-                std::exit(0);
+            if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
+                    std::exit(0);
+                }
+                auto it = key_map.find(event.key.keysym.sym);
+                if (it != key_map.end()) {
+                    joypad.set_button_status(it->second, true);
+                }
+            }
+            if (event.type == SDL_KEYUP) {
+                auto it = key_map.find(event.key.keysym.sym);
+                if (it != key_map.end()) {
+                    joypad.set_button_status(it->second, false);
+                }
             }
         }
     });

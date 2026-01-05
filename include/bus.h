@@ -3,6 +3,7 @@
 #include "mem.h"
 #include "cartridge.h"
 #include "ppu.h"
+#include "joypad.h"
 #include <cstdint>
 #include <vector>
 #include <array>
@@ -19,11 +20,12 @@ public:
     std::array<uint8_t, 2048> cpu_vram;  
     std::vector<uint8_t> prg_rom;          
     std::unique_ptr<NesPPU> ppu;            
-    explicit Bus(Rom rom, std::function<void(const NesPPU&)> gameloop_callback);
+    explicit Bus(Rom rom, std::function<void(const NesPPU&, Joypad&)> gameloop_callback);
     uint8_t mem_read(uint16_t addr) const override;
     void mem_write(uint16_t addr, uint8_t data) override;
-    std::function<void(const NesPPU&)> gameloop_callback;
+    std::function<void(const NesPPU&, Joypad&)> gameloop_callback;
     void tick(uint8_t cpu_cycles);
+    mutable Joypad joypad;
 private:
     uint8_t read_prg_rom(uint16_t addr) const;
 };
