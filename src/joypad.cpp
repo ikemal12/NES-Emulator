@@ -15,11 +15,14 @@ void Joypad::write(uint8_t data) {
 }
 
 uint8_t Joypad::read() {
-    uint8_t value = (button_status & (1 << button_index)) ? 1 : 0;
-    if (!strobe && button_index < 8) {
+    if (button_index > 7) {
+        return 1;
+    }
+    uint8_t response = (button_status & (1 << button_index)) ? 1 : 0;
+    if (!strobe && button_index <= 7) {
         button_index++;
     }
-    return value;
+    return response;
 }
 
 void Joypad::set_button_status(JoypadButton button, bool pressed) {

@@ -2,3 +2,4 @@ build/
 archive/
 test/*.log
 test/output/
+test/roms/

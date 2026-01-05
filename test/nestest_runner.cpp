@@ -22,7 +22,6 @@ std::vector<uint8_t> read_file(const std::string& filename) {
 
 int main() {
     std::cout << "Hello from C++ NES Emulator!" << std::endl;
-    
     try {
         std::cout << "Loading nestest.nes...\n";
         std::vector<uint8_t> rom_data = read_file("../test/roms/nestest.nes");
@@ -31,9 +30,9 @@ int main() {
         std::cout << "  PRG-ROM: " << rom.prg_rom.size() << " bytes\n";
         std::cout << "  CHR-ROM: " << rom.chr_rom.size() << " bytes\n";
         std::cout << "  Mapper: " << static_cast<int>(rom.mapper) << "\n\n";
-        
+
         std::cout << "Creating Bus and PPU...\n";
-        Bus bus(std::move(rom), [](const NesPPU&) {});
+        Bus bus(std::move(rom), [](const NesPPU&, Joypad&) {});
         std::cout << "Bus created successfully!\n\n";
         
         std::cout << "Creating CPU...\n";

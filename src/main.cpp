@@ -48,9 +48,9 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
-    std::ifstream file("test/roms/snake.nes", std::ios::binary);
+    std::ifstream file("test/roms/flappybird.nes", std::ios::binary);
     if (!file) {
-        std::cerr << "Failed to open nestest.nes" << std::endl;
+        std::cerr << "Failed to open flappybird.nes" << std::endl;
         SDL_DestroyTexture(texture);
         SDL_DestroyRenderer(sdl_renderer);
         SDL_DestroyWindow(window);
