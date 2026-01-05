@@ -64,13 +64,20 @@ void Bus::mem_write(uint16_t addr, uint8_t data) {
         ppu->write_to_mask(data);
         
     } else if (addr == 0x2002) {
-        throw std::runtime_error("Attempt to write to PPU status register");
+        // throw std::runtime_error("Attempt to write to PPU status register");
         
     } else if (addr == 0x2003) {
         ppu->write_to_oam_addr(data);
         
     } else if (addr == 0x2004) {
         ppu->write_to_oam_data(data);
+
+    } else if (addr == 0x4014) {
+        uint16_t start = static_cast<uint16_t>(data) << 8;
+        for (int i = 0; i < 256; i++) {
+            ppu->oam_data[ppu->oam_addr] = mem_read(start + i);
+            ppu->oam_addr++;
+        }
         
     } else if (addr == 0x2005) {
         ppu->write_to_scroll(data);
@@ -86,7 +93,7 @@ void Bus::mem_write(uint16_t addr, uint8_t data) {
         mem_write(mirror_down_addr, data);
         
     } else if (addr >= 0x8000 && addr <= 0xFFFF) {
-        throw std::runtime_error("Attempt to write to Cartridge ROM space");
+        // throw std::runtime_error("Attempt to write to Cartridge ROM space");
 
     } else if (addr == 0x4016) {
         joypad.write(data);
@@ -95,10 +102,13 @@ void Bus::mem_write(uint16_t addr, uint8_t data) {
 }
 
 void Bus::tick(uint8_t cpu_cycles) {
-    bool nmi_before = ppu->nmi_interrupt;
-    ppu->tick(cpu_cycles * 3);
-    bool nmi_after = ppu->nmi_interrupt;
-    if (!nmi_before && nmi_after) {
+    bool vblank_entered = ppu->tick(cpu_cycles * 3);
+    if (vblank_entered) {
+        static int frame_count = 0;
+        frame_count++;
+        if (frame_count % 60 == 0) {
+            std::cout << "Frame " << frame_count << std::endl;
+        }
         gameloop_callback(*ppu, joypad);
     }
 }
