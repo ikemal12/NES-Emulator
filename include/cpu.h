@@ -15,9 +15,9 @@ public:
     static const uint8_t CARRY             = 0b00000001;  
     static const uint8_t ZERO              = 0b00000010;
     static const uint8_t INTERRUPT_DISABLE = 0b00000100;  
-    static const uint8_t DECIMAL_MODE      = 0b00001000;  // not used on NES
+    static const uint8_t DECIMAL_MODE      = 0b00001000;  
     static const uint8_t BREAK             = 0b00010000;  
-    static const uint8_t BREAK2            = 0b00100000;  // Unused (always 1)
+    static const uint8_t BREAK2            = 0b00100000;  
     static const uint8_t OVERFLOW_FLAG     = 0b01000000;  
     static const uint8_t NEGATIVE          = 0b10000000;  
     
@@ -74,8 +74,8 @@ public:
             const OpCode* opcode = it->second;
             
             switch (code) {
-                case 0x00:
-                    return;  
+                case 0x00:  // BRK - dont return, just continue (or handle as interrupt)
+                    break;  // For now, just continue execution
                 
                 // LDA - Load Accumulator
                 case 0xa9: case 0xa5: case 0xb5: case 0xad:
@@ -325,9 +325,26 @@ public:
                 case 0x14: case 0x34: case 0x54: case 0x74:
                 case 0xd4: case 0xf4: case 0x1a: case 0x3a:
                 case 0x5a: case 0x7a: case 0xda: case 0xfa:
-                case 0x80: case 0x1c: case 0x3c: case 0x5c:
-                case 0x7c: case 0xdc: case 0xfc:
+                case 0x80: case 0x82: case 0x89: case 0xc2: case 0xe2:
+                case 0x1c: case 0x3c: case 0x5c: case 0x7c: case 0xdc: case 0xfc:
+                case 0x02: case 0x12: case 0x22: case 0x32: case 0x42: case 0x52:
+                case 0x62: case 0x72: case 0x92: case 0xb2: case 0xd2: case 0xf2:
                     break; 
+                
+                // ANC - Unofficial: AND + set carry to bit 7 of result
+                case 0x0b: case 0x2b:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        register_a = register_a & data;
+                        update_zero_and_negative_flags(register_a);
+                        if ((register_a & 0x80) != 0) {
+                            status.insert(CpuFlags::CARRY);
+                        } else {
+                            status.remove(CpuFlags::CARRY);
+                        }
+                    }
+                    break;
                 
                 // LAX - Unofficial: Load A and X
                 case 0xa3: case 0xa7: case 0xaf: case 0xb3:
@@ -335,16 +352,157 @@ public:
                     lax(opcode->mode);
                     break;
                 
+                // ISC - Unofficial: INC + SBC (for now, just skip it)
+                case 0xe3: case 0xe7: case 0xef: case 0xf3:
+                case 0xf7: case 0xfb: case 0xff:
+                    // TODO: Implement properly - increments memory then subtracts from A
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        data = data + 1;
+                        mem_write(addr, data);
+                        // Now do SBC
+                        uint8_t value = data ^ 0xFF;
+                        uint16_t sum = (uint16_t)register_a + value + (status.contains(CpuFlags::CARRY) ? 1 : 0);
+                        if (sum > 0xFF) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        register_a = (uint8_t)sum;
+                        update_zero_and_negative_flags(register_a);
+                    }
+                    break;
+
+                // RRA - Unofficial: ROR + ADC
+                case 0x67: case 0x77: case 0x6f: case 0x7f:
+                case 0x7b: case 0x63: case 0x73:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        bool old_carry = status.contains(CpuFlags::CARRY);
+                        if ((data & 1) != 0) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        data >>= 1;
+                        if (old_carry) data |= 0x80;
+                        mem_write(addr, data);
+                        // Now do ADC
+                        uint16_t sum = (uint16_t)register_a + data + (status.contains(CpuFlags::CARRY) ? 1 : 0);
+                        if (sum > 0xFF) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        register_a = (uint8_t)sum;
+                        update_zero_and_negative_flags(register_a);
+                    }
+                    break;
+
+                // SRE - Unofficial: LSR + EOR
+                case 0x47: case 0x57: case 0x4f: case 0x5f:
+                case 0x5b: case 0x43: case 0x53:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        if ((data & 1) != 0) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        data >>= 1;
+                        mem_write(addr, data);
+                        register_a ^= data;
+                        update_zero_and_negative_flags(register_a);
+                    }
+                    break;
+
+                // RLA - Unofficial: ROL + AND
+                case 0x27: case 0x37: case 0x2f: case 0x3f:
+                case 0x3b: case 0x23: case 0x33:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        bool old_carry = status.contains(CpuFlags::CARRY);
+                        if ((data & 0x80) != 0) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        data <<= 1;
+                        if (old_carry) data |= 1;
+                        mem_write(addr, data);
+                        register_a &= data;
+                        update_zero_and_negative_flags(register_a);
+                    }
+                    break;
+
+                // SLO - Unofficial: ASL + ORA
+                case 0x07: case 0x17: case 0x0f: case 0x1f:
+                case 0x1b: case 0x03: case 0x13:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        if ((data & 0x80) != 0) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        data <<= 1;
+                        mem_write(addr, data);
+                        register_a |= data;
+                        update_zero_and_negative_flags(register_a);
+                    }
+                    break;
+
+                // DCP - Unofficial: DEC + CMP
+                case 0xc7: case 0xd7: case 0xcf: case 0xdf:
+                case 0xdb: case 0xc3: case 0xd3:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        data = data - 1;
+                        mem_write(addr, data);
+                        if (register_a >= data) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        update_zero_and_negative_flags(register_a - data);
+                    }
+                    break;
+
+                // AXS - Unofficial
+                case 0xcb:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        uint8_t x_and_a = register_x & register_a;
+                        if (x_and_a >= data) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        register_x = x_and_a - data;
+                        update_zero_and_negative_flags(register_x);
+                    }
+                    break;
+
+                // ALR - Unofficial
+                case 0x4b:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        register_a = register_a & data;
+                        if (register_a & 1) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        register_a = register_a >> 1;
+                        update_zero_and_negative_flags(register_a);
+                    }
+                    break;
+
+                // ARR - Unofficial
+                case 0x6b:
+                    {
+                        uint16_t addr = get_operand_address(opcode->mode);
+                        uint8_t data = mem_read(addr);
+                        register_a = register_a & data;
+                        bool old_carry = status.contains(CpuFlags::CARRY);
+                        register_a = (register_a >> 1) | (old_carry ? 0x80 : 0);
+                        if (register_a & 0x40) status.insert(CpuFlags::CARRY); else status.remove(CpuFlags::CARRY);
+                        update_zero_and_negative_flags(register_a);
+                    }
+                    break;
+
+                // Unofficial SBC
+                case 0xeb:
+                    sbc(opcode->mode);
+                    break;
+
+                case 0x93: case 0x9f: case 0x9e: case 0x9c:
+                case 0x9b: case 0xbb: case 0x8b:
+                    break;
+                
                 default:
-                    throw std::runtime_error("Unimplemented opcode: " + std::to_string(code));
+                    // std::cerr << "Warning: Unknown opcode 0x" << std::hex << (int)code << std::dec << std::endl;
+                    break;
+                    // throw std::runtime_error("Unimplemented opcode: " + std::to_string(code));
             }
             if (program_counter_state == program_counter) {
                 program_counter += (opcode->len - 1);
             }
             uint8_t cpu_cycles = opcode->cycles;
             bus.tick(cpu_cycles);
-            bool nmi_triggered = bus.ppu->nmi_interrupt;
-            if (nmi_triggered) {
+            if (bus.ppu->poll_nmi_interrupt()) {
                 interrupt_nmi();
             }
         }

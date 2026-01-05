@@ -208,12 +208,38 @@ const std::vector<OpCode>& opcodes::get_cpu_opcodes() {
         OpCode(0xda, "*NOP", 1, 2, AddressingMode::NoneAddressing),
         OpCode(0xfa, "*NOP", 1, 2, AddressingMode::NoneAddressing),
         OpCode(0x80, "*NOP", 2, 2, AddressingMode::Immediate),
+        OpCode(0x82, "*NOP", 2, 2, AddressingMode::Immediate),
+        OpCode(0x89, "*NOP", 2, 2, AddressingMode::Immediate),
+        OpCode(0xc2, "*NOP", 2, 2, AddressingMode::Immediate),
+        OpCode(0xe2, "*NOP", 2, 2, AddressingMode::Immediate),
+        OpCode(0x04, "*NOP", 2, 3, AddressingMode::ZeroPage),
+        OpCode(0x44, "*NOP", 2, 3, AddressingMode::ZeroPage),
+        OpCode(0x64, "*NOP", 2, 3, AddressingMode::ZeroPage),
+        OpCode(0x0c, "*NOP", 3, 4, AddressingMode::Absolute),
         OpCode(0x1c, "*NOP", 3, 4, AddressingMode::Absolute_X),
         OpCode(0x3c, "*NOP", 3, 4, AddressingMode::Absolute_X),
         OpCode(0x5c, "*NOP", 3, 4, AddressingMode::Absolute_X),
         OpCode(0x7c, "*NOP", 3, 4, AddressingMode::Absolute_X),
         OpCode(0xdc, "*NOP", 3, 4, AddressingMode::Absolute_X),
         OpCode(0xfc, "*NOP", 3, 4, AddressingMode::Absolute_X),
+        
+        // More unofficial NOPs
+        OpCode(0x02, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0x12, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0x22, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0x32, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0x42, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0x52, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0x62, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0x72, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0x92, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0xb2, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0xd2, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode(0xf2, "*NOP", 1, 2, AddressingMode::NoneAddressing),
+
+        // ANC - Unofficial: AND + set carry to bit 7
+        OpCode(0x0b, "*ANC", 2, 2, AddressingMode::Immediate),
+        OpCode(0x2b, "*ANC", 2, 2, AddressingMode::Immediate),
 
         OpCode(0xab, "*LAX", 2, 2, AddressingMode::Immediate),
         OpCode(0xa7, "*LAX", 2, 3, AddressingMode::ZeroPage),
@@ -226,7 +252,76 @@ const std::vector<OpCode>& opcodes::get_cpu_opcodes() {
         OpCode(0x87, "*SAX", 2, 3, AddressingMode::ZeroPage),
         OpCode(0x97, "*SAX", 2, 4, AddressingMode::ZeroPage_Y),
         OpCode(0x8f, "*SAX", 3, 4, AddressingMode::Absolute),
-        OpCode(0x83, "*SAX", 2, 6, AddressingMode::Indirect_X)
+        OpCode(0x83, "*SAX", 2, 6, AddressingMode::Indirect_X),
+
+        // ISC - Unofficial: INC + SBC
+        OpCode(0xe7, "*ISC", 2, 5, AddressingMode::ZeroPage),
+        OpCode(0xf7, "*ISC", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode(0xef, "*ISC", 3, 6, AddressingMode::Absolute),
+        OpCode(0xff, "*ISC", 3, 7, AddressingMode::Absolute_X),
+        OpCode(0xfb, "*ISC", 3, 7, AddressingMode::Absolute_Y),
+        OpCode(0xe3, "*ISC", 2, 8, AddressingMode::Indirect_X),
+        OpCode(0xf3, "*ISC", 2, 8, AddressingMode::Indirect_Y),
+
+        // RRA - Unofficial: ROR + ADC
+        OpCode(0x67, "*RRA", 2, 5, AddressingMode::ZeroPage),
+        OpCode(0x77, "*RRA", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode(0x6f, "*RRA", 3, 6, AddressingMode::Absolute),
+        OpCode(0x7f, "*RRA", 3, 7, AddressingMode::Absolute_X),
+        OpCode(0x7b, "*RRA", 3, 7, AddressingMode::Absolute_Y),
+        OpCode(0x63, "*RRA", 2, 8, AddressingMode::Indirect_X),
+        OpCode(0x73, "*RRA", 2, 8, AddressingMode::Indirect_Y),
+
+        // SRE - Unofficial: LSR + EOR
+        OpCode(0x47, "*SRE", 2, 5, AddressingMode::ZeroPage),
+        OpCode(0x57, "*SRE", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode(0x4f, "*SRE", 3, 6, AddressingMode::Absolute),
+        OpCode(0x5f, "*SRE", 3, 7, AddressingMode::Absolute_X),
+        OpCode(0x5b, "*SRE", 3, 7, AddressingMode::Absolute_Y),
+        OpCode(0x43, "*SRE", 2, 8, AddressingMode::Indirect_X),
+        OpCode(0x53, "*SRE", 2, 8, AddressingMode::Indirect_Y),
+
+        // RLA - Unofficial: ROL + AND
+        OpCode(0x27, "*RLA", 2, 5, AddressingMode::ZeroPage),
+        OpCode(0x37, "*RLA", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode(0x2f, "*RLA", 3, 6, AddressingMode::Absolute),
+        OpCode(0x3f, "*RLA", 3, 7, AddressingMode::Absolute_X),
+        OpCode(0x3b, "*RLA", 3, 7, AddressingMode::Absolute_Y),
+        OpCode(0x23, "*RLA", 2, 8, AddressingMode::Indirect_X),
+        OpCode(0x33, "*RLA", 2, 8, AddressingMode::Indirect_Y),
+
+        // SLO - Unofficial: ASL + ORA
+        OpCode(0x07, "*SLO", 2, 5, AddressingMode::ZeroPage),
+        OpCode(0x17, "*SLO", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode(0x0f, "*SLO", 3, 6, AddressingMode::Absolute),
+        OpCode(0x1f, "*SLO", 3, 7, AddressingMode::Absolute_X),
+        OpCode(0x1b, "*SLO", 3, 7, AddressingMode::Absolute_Y),
+        OpCode(0x03, "*SLO", 2, 8, AddressingMode::Indirect_X),
+        OpCode(0x13, "*SLO", 2, 8, AddressingMode::Indirect_Y),
+
+        // DCP - Unofficial: DEC + CMP
+        OpCode(0xc7, "*DCP", 2, 5, AddressingMode::ZeroPage),
+        OpCode(0xd7, "*DCP", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode(0xcf, "*DCP", 3, 6, AddressingMode::Absolute),
+        OpCode(0xdf, "*DCP", 3, 7, AddressingMode::Absolute_X),
+        OpCode(0xdb, "*DCP", 3, 7, AddressingMode::Absolute_Y),
+        OpCode(0xc3, "*DCP", 2, 8, AddressingMode::Indirect_X),
+        OpCode(0xd3, "*DCP", 2, 8, AddressingMode::Indirect_Y),
+
+        // More unofficial opcodes
+        OpCode(0xcb, "*AXS", 2, 2, AddressingMode::Immediate),
+        OpCode(0x0b, "*ANC", 2, 2, AddressingMode::Immediate),
+        OpCode(0x2b, "*ANC", 2, 2, AddressingMode::Immediate),
+        OpCode(0x4b, "*ALR", 2, 2, AddressingMode::Immediate),
+        OpCode(0x6b, "*ARR", 2, 2, AddressingMode::Immediate),
+        OpCode(0xeb, "*SBC", 2, 2, AddressingMode::Immediate),
+        OpCode(0x93, "*SHA", 2, 6, AddressingMode::Indirect_Y),
+        OpCode(0x9f, "*SHA", 3, 5, AddressingMode::Absolute_Y),
+        OpCode(0x9e, "*SHX", 3, 5, AddressingMode::Absolute_Y),
+        OpCode(0x9c, "*SHY", 3, 5, AddressingMode::Absolute_X),
+        OpCode(0x9b, "*TAS", 3, 5, AddressingMode::Absolute_Y),
+        OpCode(0xbb, "*LAS", 3, 4, AddressingMode::Absolute_Y),
+        OpCode(0x8b, "*XAA", 2, 2, AddressingMode::Immediate)
     };
     
     return CPU_OPS_CODES;
