@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
 #include "cartridge.h"
-#include "render/tile.h"
+#include "render/renderer.h"
+#include "cpu.h"
+#include "bus.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -11,7 +13,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     SDL_Window* window = SDL_CreateWindow(
-        "NES Emulator - Tile Viewer",
+        "NES Emulator",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         256 * 3,  
@@ -23,23 +25,24 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!renderer) {
+    SDL_Renderer* sdl_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!sdl_renderer) {
         std::cerr << "Renderer creation failed: " << SDL_GetError() << std::endl;
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
+    SDL_RenderSetScale(sdl_renderer, 3.0f, 3.0f);
     SDL_Texture* texture = SDL_CreateTexture(
-        renderer,
+        sdl_renderer,
         SDL_PIXELFORMAT_RGB24, 
         SDL_TEXTUREACCESS_STREAMING,  
-        8,  
-        8   
+        256,  
+        240   
     );
     if (!texture) {
         std::cerr << "Texture creation failed: " << SDL_GetError() << std::endl;
-        SDL_DestroyRenderer(renderer);
+        SDL_DestroyRenderer(sdl_renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
@@ -48,7 +51,7 @@ int main(int argc, char* argv[]) {
     if (!file) {
         std::cerr << "Failed to open nestest.nes" << std::endl;
         SDL_DestroyTexture(texture);
-        SDL_DestroyRenderer(renderer);
+        SDL_DestroyRenderer(sdl_renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
@@ -57,35 +60,33 @@ int main(int argc, char* argv[]) {
                                 std::istreambuf_iterator<char>());
     file.close();
     Rom cartridge = Rom::create(rom_data);
-    std::cout << "CHR ROM size: " << cartridge.chr_rom.size() << " bytes" << std::endl;
-    if (cartridge.chr_rom.size() < 16) {
-        std::cerr << "CHR ROM too small or empty!" << std::endl;
-        SDL_DestroyTexture(texture);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
-    Frame tile_frame = TileRenderer::show_tile(cartridge.chr_rom, 0, 0);
-    SDL_UpdateTexture(texture, nullptr, tile_frame.get_data(), 8 * 3);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-    SDL_RenderPresent(renderer);
+    std::cout << "Loaded ROM - PRG: " << cartridge.prg_rom.size() << " bytes, CHR:" << cartridge.chr_rom.size() << " bytes" << std::endl;
+    Renderer nes_renderer;
     SDL_Event event;
-    bool running = true;
-    while (running) {
+
+    Bus bus(std::move(cartridge), [&](const NesPPU& ppu) {
+        nes_renderer.render(ppu);
+        const Frame& frame = nes_renderer.get_frame();
+        SDL_UpdateTexture(texture, nullptr, frame.get_data(), 256 * 3);
+        SDL_RenderClear(sdl_renderer);
+        SDL_RenderCopy(sdl_renderer, texture, nullptr, nullptr);
+        SDL_RenderPresent(sdl_renderer);
+
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
+                std::exit(0);
             }
             if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
-                running = false;
+                std::exit(0);
             }
         }
-    }
+    });
+    
+    CPU cpu(std::move(bus));
+    cpu.reset();
+    cpu.run();
     SDL_DestroyTexture(texture);
-    SDL_DestroyRenderer(renderer);
+    SDL_DestroyRenderer(sdl_renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

@@ -24,7 +24,8 @@ uint8_t Bus::mem_read(uint16_t addr) const {
 
     } else if (addr == 0x2000 || addr == 0x2001 || addr == 0x2003 || 
                addr == 0x2005 || addr == 0x2006 || addr == 0x4014) {
-        throw std::runtime_error("Attempt to read from write-only PPU address");
+        // std::cout << "Warning: Read from write-only PPU address 0x" << std::hex << addr << std::dec << std::endl;
+        return 0;
         
     } else if (addr == 0x2002) {
         return ppu->read_status();
@@ -43,7 +44,6 @@ uint8_t Bus::mem_read(uint16_t addr) const {
         return read_prg_rom(addr);
         
     } else {
-        std::cout << "Ignoring mem access at 0x" << std::hex << addr << std::endl;
         return 0;
     }
 }
@@ -83,10 +83,7 @@ void Bus::mem_write(uint16_t addr, uint8_t data) {
         
     } else if (addr >= 0x8000 && addr <= 0xFFFF) {
         throw std::runtime_error("Attempt to write to Cartridge ROM space");
-        
-    } else {
-        std::cout << "Ignoring mem write-access at 0x" << std::hex << addr << std::endl;
-    }
+    } 
 }
 
 void Bus::tick(uint8_t cpu_cycles) {

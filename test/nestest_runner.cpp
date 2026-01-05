@@ -33,7 +33,7 @@ int main() {
         std::cout << "  Mapper: " << static_cast<int>(rom.mapper) << "\n\n";
         
         std::cout << "Creating Bus and PPU...\n";
-        Bus bus(std::move(rom));
+        Bus bus(std::move(rom), [](const NesPPU&) {});
         std::cout << "Bus created successfully!\n\n";
         
         std::cout << "Creating CPU...\n";
