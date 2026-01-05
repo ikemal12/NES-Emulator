@@ -22,6 +22,7 @@ public:
     static const uint8_t EMPHASISE_BLUE            = 0b10000000;
 
     MaskRegister();
+    bool contains(uint8_t flag) const;
     void is_grayscale(bool status);
     void leftmost_8pxl_background(bool status);
     void leftmost_8pxl_sprite(bool status);

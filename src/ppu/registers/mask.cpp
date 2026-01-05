@@ -4,6 +4,10 @@ MaskRegister::MaskRegister()
     : bits(0b00000000)
 {}
 
+bool MaskRegister::contains(uint8_t flag) const {
+    return (bits & flag) != 0;
+}
+
 void MaskRegister::is_grayscale(bool status) {
     if (status) {
         bits |= GREYSCALE;
