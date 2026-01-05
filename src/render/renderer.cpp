@@ -8,9 +8,8 @@ const Frame& Renderer::get_frame() const {
     return frame;
 }
 
-std::array<uint8_t, 4> Renderer::bg_palette(const NesPPU& ppu, size_t tile_column, size_t tile_row) const {
+std::array<uint8_t, 4> Renderer::bg_palette(const NesPPU& ppu, size_t tile_column, size_t tile_row, uint16_t nametable_base) const {
     size_t attr_table_idx = (tile_row / 4) * 8 + (tile_column / 4);
-    uint16_t nametable_base = ppu.ctrl.nametable_addr();
     uint16_t attr_addr = nametable_base + 0x3C0 + attr_table_idx;
     uint16_t vram_idx = ppu.mirror_vram_addr(attr_addr);
     uint8_t attr_byte = ppu.vram[vram_idx];
@@ -52,30 +51,39 @@ std::array<uint8_t, 4> Renderer::sprite_palette(const NesPPU& ppu, uint8_t palet
 
 void Renderer::render_background(const NesPPU& ppu) {    
     uint16_t bank = ppu.ctrl.background_pattern_addr();
-    uint16_t nametable_base = ppu.ctrl.nametable_addr();
-    for (size_t i = 0; i < 0x03C0; i++) {
-        uint16_t tile_addr = nametable_base + i;
-        uint16_t vram_idx = ppu.mirror_vram_addr(tile_addr);
-        uint8_t tile_idx = ppu.vram[vram_idx];
-        size_t tile_column = i % 32;  
-        size_t tile_row = i / 32;
-        uint16_t tile_start = bank + (tile_idx * 16);
-        const uint8_t* tile = &ppu.chr_rom[tile_start];
-        auto palette = bg_palette(ppu, tile_column, tile_row);
-        
-        for (size_t y = 0; y < 8; y++) {
-            uint8_t lower = tile[y];      
-            uint8_t upper = tile[y + 8];  
-            for (int x = 7; x >= 0; x--) {
-                uint8_t value = ((upper & 1) << 1) | (lower & 1);
-                upper >>= 1;
-                lower >>= 1;
-                uint8_t color_idx = palette[value];
-                auto rgb = Palette::get_color(color_idx);
-                size_t pixel_x = tile_column * 8 + x;
-                size_t pixel_y = tile_row * 8 + y;
-                frame.set_pixel(pixel_x, pixel_y, rgb);
+    uint16_t base_nametable = ppu.ctrl.nametable_addr();
+    uint8_t scroll_x = ppu.scroll.get_x();
+    uint8_t scroll_y = ppu.scroll.get_y();
+    for (int y = 0; y < 240; ++y) {
+        for (int x = 0; x < 256; ++x) {
+            uint16_t current_x = scroll_x + x;
+            uint16_t current_y = scroll_y + y;
+            uint16_t current_nametable = base_nametable;
+            if (current_x >= 256) {
+                current_x -= 256;
+                current_nametable ^= 0x0400;
             }
+            if (current_y >= 240) {
+                current_y -= 240;
+                current_nametable ^= 0x0800;
+            }
+            uint8_t tile_col = current_x / 8;
+            uint8_t tile_row = current_y / 8;
+            uint8_t component_x = current_x % 8;
+            uint8_t component_y = current_y % 8;
+            uint16_t tile_addr = current_nametable + tile_row * 32 + tile_col;
+            uint16_t vram_idx = ppu.mirror_vram_addr(tile_addr);
+            uint8_t tile_idx = ppu.vram[vram_idx];
+            uint16_t tile_start = bank + (tile_idx * 16) + component_y;
+            uint8_t lower = ppu.chr_rom[tile_start];
+            uint8_t upper = ppu.chr_rom[tile_start + 8];
+            uint8_t shift = 7 - component_x;
+            uint8_t pixel_val = ((upper >> shift) & 1) << 1 | ((lower >> shift) & 1);
+            if (pixel_val == 0) continue; 
+            auto palette = bg_palette(ppu, tile_col, tile_row, current_nametable);
+            uint8_t color_idx = palette[pixel_val];
+            auto rgb = Palette::get_color(color_idx);
+            frame.set_pixel(x, y, rgb);
         }
     }
 }

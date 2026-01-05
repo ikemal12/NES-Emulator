@@ -11,6 +11,8 @@ public:
     ScrollRegister();
     void write(uint8_t data);
     void reset_latch();
+    uint8_t get_x() const { return scroll_x; }
+    uint8_t get_y() const { return scroll_y; }
 };
 
 #endif // SCROLL_REGISTER_H
