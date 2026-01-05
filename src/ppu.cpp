@@ -1,8 +1,9 @@
 #include "ppu.h"
 #include <stdexcept>
+#include <iostream>
 
-NesPPU::NesPPU(std::vector<uint8_t> chr_rom, Mirroring mirroring)
-    : chr_rom(std::move(chr_rom))
+NesPPU::NesPPU(std::vector<uint8_t> chr_rom_data, Mirroring mirroring)
+    : chr_rom(chr_rom_data.empty() ? std::vector<uint8_t>(8192, 0) : std::move(chr_rom_data))
     , vram{}
     , oam_data{}
     , palette_table{}
@@ -68,7 +69,10 @@ uint8_t NesPPU::read_data() {
         internal_data_buf = vram[mirror_vram_addr(address)];
         return result;
     } else if (address >= 0x3000 && address <= 0x3EFF) {
-        throw std::runtime_error("addr space 0x3000..0x3EFF is not expected to be used, requested = " + std::to_string(address));
+        uint8_t result = internal_data_buf;
+        uint16_t mirrored = address - 0x1000; 
+        internal_data_buf = vram[mirror_vram_addr(mirrored)];
+        return result;
     } else if (address >= 0x3F00 && address <= 0x3FFF) {
         return palette_table[(address - 0x3F00) % 32];
     } else {
@@ -77,7 +81,12 @@ uint8_t NesPPU::read_data() {
 }
 
 void NesPPU::write_to_ctrl(uint8_t value) {
+    bool nmi_before = ctrl.contains(ControlRegister::GENERATE_NMI);
     ctrl.update(value);
+    bool nmi_after = ctrl.contains(ControlRegister::GENERATE_NMI);
+    if (!nmi_before && nmi_after && status.is_in_vblank()) {
+        nmi_interrupt = true;
+    }
 }
 
 void NesPPU::write_to_mask(uint8_t value) {
@@ -104,12 +113,12 @@ void NesPPU::write_to_ppu_addr(uint8_t value) {
 void NesPPU::write_to_data(uint8_t value) {
     uint16_t address = addr.get();
     if (address >= 0 && address <= 0x1FFF) {
-        // For now, silently ignore writes (CHR ROM can't be written)
-        // Later: check if cartridge has CHR RAM and allow writes
+        chr_rom[address] = value;
     } else if (address >= 0x2000 && address <= 0x2FFF) {
         vram[mirror_vram_addr(address)] = value;
     } else if (address >= 0x3000 && address <= 0x3EFF) {
-        throw std::runtime_error("addr space 0x3000..0x3EFF is not expected to be used, requested = " + std::to_string(address));
+        uint16_t mirrored = address - 0x1000; 
+        vram[mirror_vram_addr(mirrored)] = value;
     } else if (address >= 0x3F00 && address <= 0x3FFF) {
         palette_table[(address - 0x3F00) % 32] = value;
     } else {
@@ -119,16 +128,24 @@ void NesPPU::write_to_data(uint8_t value) {
 }
 
 bool NesPPU::tick(uint8_t cycles) {
+    bool vblank_entered = false;
     this->cycles += cycles;
     if (this->cycles >= 341) {
         this->cycles -= 341;
         scanline += 1;
 
         if (scanline == 241) {
+            static bool first_vblank = true;
+            if (first_vblank) {
+                std::cout << "PPU: Reached scanline 241 (VBlank), CTRL NMI bit: " 
+                          << (ctrl.contains(ControlRegister::GENERATE_NMI) ? "ON" : "OFF") << std::endl;
+                first_vblank = false;
+            }
             status.set_vblank_status(true);
             if (ctrl.contains(ControlRegister::GENERATE_NMI)) {
                 nmi_interrupt = true;
             }
+            vblank_entered = true;
         }
         if (scanline >= 262) {
             scanline = 0;
@@ -137,7 +154,19 @@ bool NesPPU::tick(uint8_t cycles) {
             nmi_interrupt = false;
         }
     }
-    return nmi_interrupt;
+    bool show_background = mask.contains(MaskRegister::SHOW_BACKGROUND);
+    bool show_sprites = mask.contains(MaskRegister::SHOW_SPRITES);
+    if (show_background && show_sprites) {
+        uint8_t sprite_0_y = oam_data[0];
+        uint8_t sprite_0_x = oam_data[3];
+        uint8_t sprite_height = ctrl.sprite_size(); 
+        if (scanline >= sprite_0_y + 1 && scanline <= sprite_0_y + sprite_height) {
+             if (this->cycles >= sprite_0_x && this->cycles < sprite_0_x + 8 + 20) { 
+                 status.set_sprite_zero_hit(true);
+             }
+        }
+    }
+    return vblank_entered;
 }
 
 bool NesPPU::poll_nmi_interrupt() {
