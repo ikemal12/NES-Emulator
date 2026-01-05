@@ -47,7 +47,7 @@ public:
     uint8_t register_x;       
     uint8_t register_y;       
     CpuFlags status;          
-    uint8_t stack_pointer;    // (points into 0x0100-0x01FF)
+    uint8_t stack_pointer; 
     uint16_t program_counter; 
     Bus bus;                 
     
@@ -342,7 +342,8 @@ public:
                 program_counter += (opcode->len - 1);
             }
             uint8_t cpu_cycles = opcode->cycles;
-            bool nmi_triggered = bus.ppu->tick(cpu_cycles * 3); 
+            bus.tick(cpu_cycles);
+            bool nmi_triggered = bus.ppu->nmi_interrupt;
             if (nmi_triggered) {
                 interrupt_nmi();
             }

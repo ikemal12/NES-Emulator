@@ -2,10 +2,11 @@
 #include <iostream>
 #include <stdexcept>
 
-Bus::Bus(Rom rom)
+Bus::Bus(Rom rom, std::function<void(const NesPPU&)> callback)
     : cpu_vram{}
     , prg_rom(std::move(rom.prg_rom))
     , ppu(std::make_unique<NesPPU>(std::move(rom.chr_rom), rom.screen_mirroring))
+    , gameloop_callback(std::move(callback))
 {}
 
 uint8_t Bus::read_prg_rom(uint16_t addr) const {
@@ -85,5 +86,14 @@ void Bus::mem_write(uint16_t addr, uint8_t data) {
         
     } else {
         std::cout << "Ignoring mem write-access at 0x" << std::hex << addr << std::endl;
+    }
+}
+
+void Bus::tick(uint8_t cpu_cycles) {
+    bool nmi_before = ppu->nmi_interrupt;
+    ppu->tick(cpu_cycles * 3);
+    bool nmi_after = ppu->nmi_interrupt;
+    if (!nmi_before && nmi_after) {
+        gameloop_callback(*ppu);
     }
 }
