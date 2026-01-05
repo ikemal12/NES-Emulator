@@ -17,6 +17,8 @@ public:
     ControlRegister();
     bool contains(uint8_t flag) const;
     uint8_t vram_addr_increment() const;
+    uint16_t background_pattern_addr() const;
+    uint16_t sprite_pattern_addr() const;
     void update(uint8_t data);
 };
 
