@@ -10,7 +10,10 @@ const Frame& Renderer::get_frame() const {
 
 std::array<uint8_t, 4> Renderer::bg_palette(const NesPPU& ppu, size_t tile_column, size_t tile_row) const {
     size_t attr_table_idx = (tile_row / 4) * 8 + (tile_column / 4);
-    uint8_t attr_byte = ppu.vram[0x3C0 + attr_table_idx];  // using first nametable for now
+    uint16_t nametable_base = ppu.ctrl.nametable_addr();
+    uint16_t attr_addr = nametable_base + 0x3C0 + attr_table_idx;
+    uint16_t vram_idx = ppu.mirror_vram_addr(attr_addr);
+    uint8_t attr_byte = ppu.vram[vram_idx];
     uint8_t palette_idx;
     switch ((tile_column % 4 / 2) << 1 | (tile_row % 4 / 2)) {
         case 0: 
@@ -49,8 +52,11 @@ std::array<uint8_t, 4> Renderer::sprite_palette(const NesPPU& ppu, uint8_t palet
 
 void Renderer::render_background(const NesPPU& ppu) {    
     uint16_t bank = ppu.ctrl.background_pattern_addr();
+    uint16_t nametable_base = ppu.ctrl.nametable_addr();
     for (size_t i = 0; i < 0x03C0; i++) {
-        uint8_t tile_idx = ppu.vram[i];
+        uint16_t tile_addr = nametable_base + i;
+        uint16_t vram_idx = ppu.mirror_vram_addr(tile_addr);
+        uint8_t tile_idx = ppu.vram[vram_idx];
         size_t tile_column = i % 32;  
         size_t tile_row = i / 32;
         uint16_t tile_start = bank + (tile_idx * 16);
@@ -75,6 +81,7 @@ void Renderer::render_background(const NesPPU& ppu) {
 }
 
 void Renderer::render_sprites(const NesPPU& ppu) {
+    bool is_8x16 = ppu.ctrl.sprite_size() == 16;
     uint16_t bank = ppu.ctrl.sprite_pattern_addr();
     for (int i = static_cast<int>(ppu.oam_data.size()) - 4; i >= 0; i -= 4) {
         uint8_t tile_y = ppu.oam_data[i];
@@ -85,35 +92,64 @@ void Renderer::render_sprites(const NesPPU& ppu) {
         bool flip_horizontal = (attributes & 0x40) != 0;
         uint8_t palette_idx = attributes & 0x03;
         auto palette = sprite_palette(ppu, palette_idx);
-        uint16_t tile_start = bank + (tile_idx * 16);
-        const uint8_t* tile = &ppu.chr_rom[tile_start];
-        
-        for (size_t y = 0; y < 8; y++) {
-            uint8_t lower = tile[y];
-            uint8_t upper = tile[y + 8];
-            for (int x = 7; x >= 0; x--) {
-                uint8_t value = ((upper & 1) << 1) | (lower & 1);
-                upper >>= 1;
-                lower >>= 1;
-                if (value == 0) {
-                    continue;
-                }
-                uint8_t color_idx = palette[value];
-                auto rgb = Palette::get_color(color_idx);
-                size_t pixel_x, pixel_y;
-                if (flip_horizontal) {
-                    pixel_x = tile_x + (7 - x);
-                } else {
-                    pixel_x = tile_x + x;
-                }
-                
+
+        if (is_8x16) {
+            uint8_t table = tile_idx & 1;
+            uint8_t tile_index = tile_idx & 0xFE;
+            uint16_t tile_start = (table * 0x1000) + (tile_index * 16);
+            
+            for (size_t part = 0; part < 2; part++) { 
+                uint16_t current_tile_start = tile_start + (part * 16);
+                const uint8_t* tile = &ppu.chr_rom[current_tile_start];
+                size_t y_offset_base = part * 8;
                 if (flip_vertical) {
-                    pixel_y = tile_y + (7 - y);
-                } else {
-                    pixel_y = tile_y + y;
+                    y_offset_base = (1 - part) * 8;
                 }
-                if (pixel_x < Frame::WIDTH && pixel_y < Frame::HEIGHT) {
-                    frame.set_pixel(pixel_x, pixel_y, rgb);
+                for (size_t y = 0; y < 8; y++) {
+                    uint8_t lower = tile[y];
+                    uint8_t upper = tile[y + 8];
+                    for (int x = 7; x >= 0; x--) {
+                        uint8_t value = ((upper & 1) << 1) | (lower & 1);
+                        upper >>= 1;
+                        lower >>= 1;
+                        if (value == 0) continue;
+                        uint8_t color_idx = palette[value];
+                        auto rgb = Palette::get_color(color_idx);
+                        size_t pixel_x;
+                        if (flip_horizontal) pixel_x = tile_x + (7 - x);
+                        else pixel_x = tile_x + x;
+                        size_t pixel_y;
+                        if (flip_vertical) pixel_y = tile_y + y_offset_base + (7 - y);
+                        else pixel_y = tile_y + y_offset_base + y;
+                        if (pixel_x < Frame::WIDTH && pixel_y < Frame::HEIGHT) {
+                            frame.set_pixel(pixel_x, pixel_y, rgb);
+                        }
+                    }
+                }
+            }
+        } else {
+            uint16_t tile_start = bank + (tile_idx * 16);
+            const uint8_t* tile = &ppu.chr_rom[tile_start];
+            
+            for (size_t y = 0; y < 8; y++) {
+                uint8_t lower = tile[y];
+                uint8_t upper = tile[y + 8];
+                for (int x = 7; x >= 0; x--) {
+                    uint8_t value = ((upper & 1) << 1) | (lower & 1);
+                    upper >>= 1;
+                    lower >>= 1;
+                    if (value == 0) continue;
+                    uint8_t color_idx = palette[value];
+                    auto rgb = Palette::get_color(color_idx);
+                    size_t pixel_x;
+                    if (flip_horizontal) pixel_x = tile_x + (7 - x);
+                    else pixel_x = tile_x + x;
+                    size_t pixel_y;
+                    if (flip_vertical) pixel_y = tile_y + (7 - y);
+                    else pixel_y = tile_y + y;
+                    if (pixel_x < Frame::WIDTH && pixel_y < Frame::HEIGHT) {
+                        frame.set_pixel(pixel_x, pixel_y, rgb);
+                    }
                 }
             }
         }
