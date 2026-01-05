@@ -63,8 +63,13 @@ int main(int argc, char* argv[]) {
     std::cout << "Loaded ROM - PRG: " << cartridge.prg_rom.size() << " bytes, CHR:" << cartridge.chr_rom.size() << " bytes" << std::endl;
     Renderer nes_renderer;
     SDL_Event event;
+    int frame_count = 0;
 
     Bus bus(std::move(cartridge), [&](const NesPPU& ppu) {
+        frame_count++;
+        if (frame_count % 60 == 0) {
+            std::cout << "Rendered " << frame_count << " frames..." << std::endl;
+        }
         nes_renderer.render(ppu);
         const Frame& frame = nes_renderer.get_frame();
         SDL_UpdateTexture(texture, nullptr, frame.get_data(), 256 * 3);
@@ -81,10 +86,20 @@ int main(int argc, char* argv[]) {
             }
         }
     });
-    
     CPU cpu(std::move(bus));
     cpu.reset();
     cpu.run();
+    std::cout << "\nCPU stopped. Total frames rendered: " << frame_count << std::endl;
+    bool running = true;
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT || 
+                (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
+                running = false;
+            }
+        }
+        SDL_Delay(16); 
+    }
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(sdl_renderer);
     SDL_DestroyWindow(window);
