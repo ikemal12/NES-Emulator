@@ -92,3 +92,41 @@ void PulseChannel::clock_length_counter() {
         length_counter--;
     }
 }
+
+APU::APU() : cycles(0) {}
+void APU::write_register(uint16_t addr, uint8_t value) {
+    if (addr >= 0x4000 && addr <= 0x4003) {
+        pulse1.write_register(addr - 0x4000, value);
+    } else if (addr >= 0x4004 && addr <= 0x4007) {
+        pulse2.write_register(addr - 0x4004, value);
+    } else if (addr == 0x4015) {
+        pulse1.enabled = (value & 0x01) != 0;
+        pulse2.enabled = (value & 0x02) != 0;
+        if (!pulse1.enabled) pulse1.length_counter = 0;
+        if (!pulse2.enabled) pulse2.length_counter = 0;
+    } else if (addr == 0x4017) {
+        // Frame counter control (we'll implement this later)
+    }
+}
+
+void APU::clock() {
+    cycles++;
+    if (cycles % 2 == 0) {  
+        pulse1.clock_timer();
+        pulse2.clock_timer();
+    }
+    if (cycles % 7457 == 0) {  
+        pulse1.clock_envelope();
+        pulse2.clock_envelope();
+    }
+    if (cycles % 14913 == 0) { 
+        pulse1.clock_length_counter();
+        pulse2.clock_length_counter();
+    }
+}
+
+float APU::output() {
+    float pulse_out = pulse1.output() + pulse2.output();
+    if (pulse_out == 0) return 0.0f;
+    return 0.00752f * pulse_out; 
+}
