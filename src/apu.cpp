@@ -38,3 +38,34 @@ void PulseChannel::write_register(uint8_t reg, uint8_t value) {
             break;
     }
 }
+
+void PulseChannel::clock_timer() {
+    if (timer_value == 0) {
+        timer_value = timer_period;
+        duty_sequence = (duty_sequence + 1) % 8;
+    } else {
+        timer_value--;
+    }
+}
+
+float PulseChannel::output() {
+    if (!enabled || length_counter == 0) {
+        return 0.0f;
+    }
+    if (timer_period < 8) {
+        return 0.0f;
+    }
+    static const uint8_t duty_table[4] = {
+        0b01000000, 
+        0b01100000,  
+        0b01111000,  
+        0b10011111  
+    };
+    uint8_t pattern = duty_table[duty_cycle];
+    bool waveform_high = (pattern >> (7 - duty_sequence)) & 1;
+    if (!waveform_high) {
+        return 0.0f;
+    }
+    uint8_t vol = constant_volume ? volume : envelope_counter;
+    return vol / 15.0f; 
+}
