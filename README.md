@@ -2,6 +2,10 @@
 
 A work-in-progress emulator for the Nintendo Entertainment System (NES) written in C++. 
 
+![Super Mario Bros](screenshots/supermario.png)
+
+![Nestest](screenshots/nestest.png)
+
 ## Roadmap
 
 - ✅ CPU 
