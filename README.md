@@ -1,13 +1,15 @@
 # NES Emulator
 
+A work-in-progress emulator for the Nintendo Entertainment System (NES) written in C++. 
+
 ## Roadmap
 
-- ✅ **CPU** (includes instruction set for the NES's 2A03 chip and main program loop)
-- ✅ **BUS**
-- ✅ **ROM**
-- [ ] Picture Processing Unit (PPU) <- **currently working on**
-- [ ] GamePad
-- [ ] APU
+- ✅ CPU 
+- ✅ BUS
+- ✅ ROM
+- ✅ PPU (need to fix glitches) 
+- ✅ GamePad
+- [ ] APU <- **currently working on**
 
 ## Resources
 
