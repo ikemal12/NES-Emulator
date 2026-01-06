@@ -69,3 +69,26 @@ float PulseChannel::output() {
     uint8_t vol = constant_volume ? volume : envelope_counter;
     return vol / 15.0f; 
 }
+
+void PulseChannel::clock_envelope() {
+    if (envelope_start) {
+        envelope_start = false;
+        envelope_counter = 15;
+        envelope_divider = volume;
+    } else if (envelope_divider > 0) {
+        envelope_divider--;
+    } else {
+        envelope_divider = volume;
+        if (envelope_counter > 0) {
+            envelope_counter--;
+        } else if (length_counter_halt) {
+            envelope_counter = 15; 
+        }
+    }
+}
+
+void PulseChannel::clock_length_counter() {
+    if (length_counter > 0 && !length_counter_halt) {
+        length_counter--;
+    }
+}
